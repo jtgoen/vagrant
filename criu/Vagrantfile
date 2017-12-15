@@ -1,0 +1,76 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$HOST1 = "criuSrc"
+$HOST2 = "criuDest"
+$HOST1IP = "10.0.0.2"
+$HOST2IP = "10.0.0.3"
+
+$hostsedit = <<EOB
+  echo "#{$HOST1IP} #{$HOST1}" >> /etc/hosts
+  echo "#{$HOST2IP} #{$HOST2}" >> /etc/hosts
+EOB
+
+Vagrant.configure("2") do |config|
+
+
+  config.vm.define $HOST1 do |vm_config|
+    vm_config.vm.box = "ubuntu/xenial64"
+    vm_config.vm.hostname = $HOST1
+    vm_config.vm.network "private_network", ip: $HOST1IP
+    
+    vm_config.ssh.forward_agent    = true
+    vm_config.ssh.insert_key       = false
+    vm_config.ssh.private_key_path =  ["~/.vagrant.d/insecure_private_key","~/.ssh/id_rsa"]
+    vm_config.vm.provision :shell, privileged: false do |s|
+      ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+      s.inline = <<-SHELL
+        echo #{ssh_pub_key} >> /home/$USER/.ssh/authorized_keys
+        sudo bash -c "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+      SHELL
+    end
+
+    # Do initial setup (can probably be removed once the boxes are packaged to already have this.
+    vm_config.vm.provision "shell", path: "setup-pkg.sh"
+    vm_config.vm.provision "shell", path: "setup-go.sh"
+    vm_config.vm.provision "shell", path: "setup-criu.sh"
+
+    # Add Hosts File Entries
+    vm_config.vm.provision "shell", inline: $hostsedit
+
+    vm_config.vm.provider :virtualbox do |vb|
+      vb.memory = "4096"
+      vb.name = $HOST1
+    end
+  end
+
+  config.vm.define $HOST2 do |vm_config|
+    vm_config.vm.box = "ubuntu/xenial64"
+    vm_config.vm.hostname = $HOST2
+    vm_config.vm.network "private_network", ip: $HOST2IP
+    
+    vm_config.ssh.forward_agent    = true
+    vm_config.ssh.insert_key       = false
+    vm_config.ssh.private_key_path =  ["~/.vagrant.d/insecure_private_key","~/.ssh/id_rsa"]
+    vm_config.vm.provision :shell, privileged: false do |s|
+      ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+      s.inline = <<-SHELL
+        echo #{ssh_pub_key} >> /home/$USER/.ssh/authorized_keys
+        sudo bash -c "echo #{ssh_pub_key} >> /root/.ssh/authorized_keys"
+      SHELL
+    end
+
+    # Do initial setup (can probably be removed once the boxes are packaged to already have this.
+    vm_config.vm.provision "shell", path: "setup-pkg.sh"
+    vm_config.vm.provision "shell", path: "setup-go.sh"
+    vm_config.vm.provision "shell", path: "setup-criu.sh"
+
+    # Add Hosts File Entries
+    vm_config.vm.provision "shell", inline: $hostsedit
+
+    vm_config.vm.provider :virtualbox do |vb|
+      vb.memory = "4096"
+      vb.name = $HOST2
+    end
+  end
+end
