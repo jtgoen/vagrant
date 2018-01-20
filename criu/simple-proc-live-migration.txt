@@ -1,0 +1,6 @@
+# Checkpointing the test process on source
+sudo criu dump --tree $(pid test) --images-dir /mnt/testdump --leave-stopped --shell-job
+
+
+# Restoring on the destination
+sudo criu restore --images-dir /mnt/testdump --shell-job

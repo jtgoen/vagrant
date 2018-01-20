@@ -8,8 +8,8 @@ git clone -b criu-dev https://github.com/checkpoint-restore/criu.git
 sudo chown -R ubuntu /home/ubuntu/go
 
 # Build/Check CRIU
-cd criu/ && sudo make
-./criu/criu check
+cd criu/ && sudo make install
+criu check
 
 # Test CRIU
 cd test/ && sudo make -C zdtm/lib/
