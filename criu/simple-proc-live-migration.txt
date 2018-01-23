@@ -1,6 +1,31 @@
+#======================================================================
+#DUMP NON-ITERATIVE
 # Checkpointing the test process on source
-sudo criu dump --tree $(pid test) --images-dir /mnt/testdump --leave-stopped --shell-job
+sudo criu dump --tree $(pidof test) --images-dir /mnt/dump --leave-stopped --shell-job
 
+# Restoring on the destination
+sudo criu restore --images-dir /mnt/dump --shell-job
+
+#======================================================================
+#ITERATIVE MIGRATION
+# Pre-Dumping the test proces (can be repeated ad nauseam until final dump is desired)
+criu pre-dump --tree $(pidof test) --images-dir /mnt/predump
+
+# Checkpointing the test process on source
+sudo criu dump --tree $(pidof test) --images-dir /mnt/dump --prev-images-dir ../predump --leave-stopped --track-mem --shell-job
 
 # Restoring on the destination
 sudo criu restore --images-dir /mnt/testdump --shell-job
+
+#======================================================================
+#LAZY MIGRATION
+# Initial dump setting up small server to serve memory pages once requested on source
+sudo criu dump --display-stats --tree $(pidof test) --images-dir /mnt/dump --lazy-pages --address 0.0.0.0 --port 1234 --shell-job
+
+# Set up lazy-pages daemon on destination (succeeds on master, fails criu-dev)
+cd /mnt/dump
+sudo criu lazy-pages --page-server --address $(gethostip -d criuSrc) --port 1234
+
+# Restoring on the destination (fails on master)
+cd /mnt/dump
+sudo criu restore --images-dir /mnt/dump --lazy-pages --shell-job

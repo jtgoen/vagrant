@@ -4,6 +4,7 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 
 cd go/src/github.com && mkdir checkpoint-restore && cd checkpoint-restore
 git clone -b criu-dev https://github.com/checkpoint-restore/criu.git
+#git clone https://github.com/checkpoint-restore/criu.git
 
 sudo chown -R ubuntu /home/ubuntu/go
 
